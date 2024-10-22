@@ -5,44 +5,96 @@
  */
 
 #define TRIGGER_PIN 14
+#define RECOIL_PIN 27
+#define LASER_PIN 26
+#define TOGGLE_1_PIN 25
+#define TOGGLE_2_PIN 33
 
 #include <BleKeyboard.h>
 
-int buttonState = 0; // Variable to hold button state
+int trigger_state = 0;      // Variable to hold button state
+int TOGGLE_1_state = false; // Variable to hold button state
+int TOGGLE_2_state = false; // Variable to hold button state
 
 BleKeyboard bleKeyboard("Exitus Rifle");
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   pinMode(TRIGGER_PIN,
+          INPUT_PULLUP); // Set pin as input with internal pull-up resistor
+  pinMode(RECOIL_PIN, OUTPUT);
+  pinMode(LASER_PIN, OUTPUT);
+
+  pinMode(TOGGLE_1_PIN,
+          INPUT_PULLUP); // Set pin as input with internal pull-up resistor
+  pinMode(TOGGLE_2_PIN,
           INPUT_PULLUP); // Set pin as input with internal pull-up resistor
 
   Serial.println("Starting BLE work!");
   bleKeyboard.begin();
 }
 
-void send_keypress() {
-  Serial.println("Sending UP key...");
-  bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
+void send_keypress()
+{
+
+  if (bleKeyboard.isConnected())
+  {
+
+    Serial.println("Sending UP key...");
+    bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
+  }
 }
 
-void loop() {
-  if (bleKeyboard.isConnected()) {
+void activate_solenoid()
+{
+  Serial.println("RECOIL_PIN, HIGH");
+  digitalWrite(RECOIL_PIN, HIGH);
+  delay(25);
+  Serial.println("RECOIL_PIN, LOW");
+  digitalWrite(RECOIL_PIN, LOW);
+}
 
-    buttonState = digitalRead(TRIGGER_PIN); // Read the button state
+void loop()
+{
 
-    if (buttonState == LOW) { // Button pressed (active LOW)
-      Serial.println("Button Pressed");
-      send_keypress();
-      delay(400);
-    } else {
-      // Serial.println("Button Released");
-    }
+  trigger_state = digitalRead(TRIGGER_PIN); // Read the button state
 
-    delay(100); // Small delay to debounce
-
-    return;
+  if (digitalRead(TOGGLE_1_PIN) == LOW)
+  {
+    TOGGLE_1_state = !TOGGLE_1_state;
+    Serial.print("switched toggle 1 state:");
+    Serial.println(TOGGLE_1_state);
+    delay(400);
   }
-  Serial.println("Waiting 5 seconds...");
-  delay(5000);
+
+  if (digitalRead(TOGGLE_2_PIN) == LOW)
+  {
+    // activation_time += 5;
+    // if (activation_time > 100)
+    //   activation_time = 10;
+    TOGGLE_2_state = !TOGGLE_2_state;
+    Serial.println("switched toggle 2 ");
+    delay(400);
+  }
+
+  if (trigger_state == LOW)
+  { // Button pressed (active LOW)
+    Serial.println("Button Pressed");
+
+    send_keypress();
+    activate_solenoid();
+    delay(1000);
+  }
+
+  if (TOGGLE_1_state == true)
+  {
+    digitalWrite(LASER_PIN, HIGH);
+  }
+  else
+  {
+    digitalWrite(LASER_PIN, LOW);
+  }
+
+  delay(100); // Small delay to debounce
 }
