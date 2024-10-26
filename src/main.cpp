@@ -50,7 +50,7 @@ void activate_solenoid()
 {
   Serial.println("RECOIL_PIN, HIGH");
   digitalWrite(RECOIL_PIN, HIGH);
-  delay(25);
+  delay(50);
   Serial.println("RECOIL_PIN, LOW");
   digitalWrite(RECOIL_PIN, LOW);
 }
